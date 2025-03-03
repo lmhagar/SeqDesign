@@ -1,0 +1,33 @@
+model {
+
+  C <- 10000  # this just has to be large enough to ensure phi > 0
+
+  comp1 <- sum(e_seg * log_h)
+  
+  comp2 <- sum(e_sub * beta)
+
+  comp3 <- sum(e_00 * h)
+
+  comp4 <- exp(beta[1])*sum(e_10 * h)
+
+  comp5 <- exp(beta[2])*sum(e_01 * h)
+
+  comp6 <- exp(sum(beta))*sum(e_11 * h)
+
+  phi <- comp3 + comp4 + comp5 + comp6 - comp1 - comp2 + C
+  zero ~ dpois(phi)
+
+  for (k in 1:K){
+    h[k] <- exp(log_h[k]) 
+  }
+  
+  # Priors for coefficients
+  for (k in 1:3) {
+    beta[k] ~ dnorm(0, prec_beta[k])
+  }
+
+  # Priors for baseline hazard
+  for (k in 1:K) {
+    log_h[k] ~ dnorm(0, prec_logh[k])
+  }
+}
