@@ -10,4 +10,4 @@ There are five code files for this manuscript.
 - 05_ex2_results_appd: reproduces the results in Appendix D of the supplement
 
 There is also the "jags_surv.txt" file that is used to implement JAGS for the survival regression model in Section 5.1;
-the "jags_beta.txt" file that is used to implement JAGS for the beta model in Section 5.2 and Appendix D.
+the "jags_beta.txt" file is used to implement JAGS for the beta model in Section 5.2 and Appendix D.
