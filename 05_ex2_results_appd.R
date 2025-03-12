@@ -310,50 +310,6 @@ assign(paste0("plot", j),
 plot1
 
 ## get next plot
-j <- 2
-
-assign(paste0("df", j, ".pred"), data.frame(n = c(seq(18, 38, 1), ns, rep(seq(18, 38, 1), 2)),
-                                            prob = c(stop.pred[, j], stop.pred.dat[,j], pred.l95[((j-1)*n.cols + 1):(j*n.cols)], 
-                                                     pred.u95[((j-1)*n.cols + 1):(j*n.cols)]),
-                                            type = sort(c(rep(c(1, 3, 4), each = n.cols), rep(2, length(ns))))))
-
-assign(paste0("df", j, ".cond"), data.frame(n = c(seq(18, 38, 1), ns, rep(seq(18, 38, 1), 2)),
-                                            prob = c(stop.cond[, j], stop.cond.dat[,j], cond.l95[((j-1)*n.cols + 1):(j*n.cols)], 
-                                                     cond.u95[((j-1)*n.cols + 1):(j*n.cols)]),
-                                            type = sort(c(rep(c(5, 7, 8), each = n.cols), rep(6, length(ns))))))
-
-assign(paste0("df", j),  rbind(get(paste0("df", j, ".pred")), get(paste0("df", j, ".cond"))))
-
-assign(paste0("plot", j), 
-       ggplot(get(paste0("df", j)), 
-              aes(x=n, y=prob, color = as.factor(type), linetype = as.factor(type))) + theme_bw() +
-         geom_line() +
-         scale_color_manual(name = "", labels = c("Estimated (Predictive)", "Simulated (Predictive)", 
-                                                  "95% Bootstrap CI (Predictive)", "95% Bootstrap CI (Predictive)",
-                                                  "Estimated (Conditional)", "Simulated (Conditional)", 
-                                                  "95% Bootstrap CI (Conditional)", "95% Bootstrap CI (Conditional)"),
-                            values = cbb[c(6, 7, 6, 6, 4, 1, 4, 4)]) +
-         scale_linetype_manual(name = "", labels = c("Estimated (Predictive)", "Simulated (Predictive)", 
-                                                     "95% Bootstrap CI (Predictive)", "95% Bootstrap CI (Predictive)",
-                                                     "Estimated (Conditional)", "Simulated (Conditional)", 
-                                                     "95% Bootstrap CI (Conditional)", "95% Bootstrap CI (Conditional)"),
-                               values = rep(c("solid", "longdash", "dashed", "dashed"), 2)) +
-         labs(color  = "", linetype = "") +
-         labs(x= bquote(italic(n)[1]), y= bquote('Stopping Probability (Failure)')) +
-         theme(plot.title = element_text(size=20,face="bold",
-                                         margin = margin(t = 0, 0, 5, 0))) +
-         theme(axis.text=element_text(size=16),
-               axis.title=element_text(size=18)) +
-         theme(legend.text=element_text(size=18)) +
-         theme(axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0))) +
-         theme(axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0))) +
-         theme(legend.position="none") +
-         ylim(0,0.3) + 
-         theme(plot.title = element_text(hjust = 0.5)) +
-         labs(title=paste0("Analysis ", j/2)))
-plot2
-
-## get next plot
 j <- 3
 
 assign(paste0("df", j, ".pred"), data.frame(n = c(seq(18, 38, 1), ns, rep(seq(18, 38, 1), 2)),
@@ -398,51 +354,6 @@ assign(paste0("plot", j),
 plot3
 
 ## get next plot
-j <- 4
-
-assign(paste0("df", j, ".pred"), data.frame(n = c(seq(18, 38, 1), ns, rep(seq(18, 38, 1), 2)),
-                                            prob = c(stop.pred[, j], stop.pred.dat[,j], pred.l95[((j-1)*n.cols + 1):(j*n.cols)], 
-                                                     pred.u95[((j-1)*n.cols + 1):(j*n.cols)]),
-                                            type = sort(c(rep(c(1, 3, 4), each = n.cols), rep(2, length(ns))))))
-
-assign(paste0("df", j, ".cond"), data.frame(n = c(seq(18, 38, 1), ns, rep(seq(18, 38, 1), 2)),
-                                            prob = c(stop.cond[, j], stop.cond.dat[,j], cond.l95[((j-1)*n.cols + 1):(j*n.cols)], 
-                                                     cond.u95[((j-1)*n.cols + 1):(j*n.cols)]),
-                                            type = sort(c(rep(c(5, 7, 8), each = n.cols), rep(6, length(ns))))))
-
-assign(paste0("df", j),  rbind(get(paste0("df", j, ".pred")), get(paste0("df", j, ".cond"))))
-df4$n <- c_vec[j]*df4$n
-
-assign(paste0("plot", j), 
-       ggplot(get(paste0("df", j)), 
-              aes(x=n, y=prob, color = as.factor(type), linetype = as.factor(type))) + theme_bw() +
-         geom_line() +
-         scale_color_manual(name = "", labels = c("Estimated (Predictive)", "Simulated (Predictive)", 
-                                                  "95% Bootstrap CI (Predictive)", "95% Bootstrap CI (Predictive)",
-                                                  "Estimated (Conditional)", "Simulated (Conditional)", 
-                                                  "95% Bootstrap CI (Conditional)", "95% Bootstrap CI (Conditional)"),
-                            values = cbb[c(6, 7, 6, 6, 4, 1, 4, 4)]) +
-         scale_linetype_manual(name = "", labels = c("Estimated (Predictive)", "Simulated (Predictive)", 
-                                                     "95% Bootstrap CI (Predictive)", "95% Bootstrap CI (Predictive)",
-                                                     "Estimated (Conditional)", "Simulated (Conditional)", 
-                                                     "95% Bootstrap CI (Conditional)", "95% Bootstrap CI (Conditional)"),
-                               values = rep(c("solid", "longdash", "dashed", "dashed"), 2)) +
-         labs(color  = "", linetype = "") +
-         labs(x= bquote(italic(n)[2]), y= bquote('')) +
-         theme(plot.title = element_text(size=20,face="bold",
-                                         margin = margin(t = 0, 0, 5, 0))) +
-         theme(axis.text=element_text(size=16),
-               axis.title=element_text(size=18)) +
-         theme(legend.text=element_text(size=18)) +
-         theme(axis.title.y = element_text(margin = margin(t = 0, r = 0, b = 0, l = 0))) +
-         theme(axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0))) +
-         theme(legend.position="none") +
-         ylim(0,0.3) + 
-         theme(plot.title = element_text(hjust = 0.5)) +
-         labs(title=paste0("Analysis ", j/2)))
-plot4
-
-## get next plot
 j <- 5
 
 assign(paste0("df", j, ".pred"), data.frame(n = c(seq(18, 38, 1), ns, rep(seq(18, 38, 1), 2)),
@@ -485,51 +396,6 @@ assign(paste0("plot", j),
          theme(plot.title = element_text(hjust = 0.5)) +
          labs(title=paste0("Analysis ", j/2 + 0.5)))
 plot5
-
-## get next plot
-j <- 6
-
-assign(paste0("df", j, ".pred"), data.frame(n = c(seq(18, 38, 1), ns, rep(seq(18, 38, 1), 2)),
-                                            prob = c(stop.pred[, j], stop.pred.dat[,j], pred.l95[((j-1)*n.cols + 1):(j*n.cols)], 
-                                                     pred.u95[((j-1)*n.cols + 1):(j*n.cols)]),
-                                            type = sort(c(rep(c(1, 3, 4), each = n.cols), rep(2, length(ns))))))
-
-assign(paste0("df", j, ".cond"), data.frame(n = c(seq(18, 38, 1), ns, rep(seq(18, 38, 1), 2)),
-                                            prob = c(stop.cond[, j], stop.cond.dat[,j], cond.l95[((j-1)*n.cols + 1):(j*n.cols)], 
-                                                     cond.u95[((j-1)*n.cols + 1):(j*n.cols)]),
-                                            type = sort(c(rep(c(5, 7, 8), each = n.cols), rep(6, length(ns))))))
-
-assign(paste0("df", j),  rbind(get(paste0("df", j, ".pred")), get(paste0("df", j, ".cond"))))
-df6$n <- c_vec[j]*df6$n
-
-assign(paste0("plot", j), 
-       ggplot(get(paste0("df", j)), 
-              aes(x=n, y=prob, color = as.factor(type), linetype = as.factor(type))) + theme_bw() +
-         geom_line() +
-         scale_color_manual(name = "", labels = c("Estimated (Predictive)", "Simulated (Predictive)", 
-                                                  "95% Bootstrap CI (Predictive)", "95% Bootstrap CI (Predictive)",
-                                                  "Estimated (Conditional)", "Simulated (Conditional)", 
-                                                  "95% Bootstrap CI (Conditional)", "95% Bootstrap CI (Conditional)"),
-                            values = cbb[c(6, 7, 6, 6, 4, 1, 4, 4)]) +
-         scale_linetype_manual(name = "", labels = c("Estimated (Predictive)", "Simulated (Predictive)", 
-                                                     "95% Bootstrap CI (Predictive)", "95% Bootstrap CI (Predictive)",
-                                                     "Estimated (Conditional)", "Simulated (Conditional)", 
-                                                     "95% Bootstrap CI (Conditional)", "95% Bootstrap CI (Conditional)"),
-                               values = rep(c("solid", "longdash", "dashed", "dashed"), 2)) +
-         labs(color  = "", linetype = "") +
-         labs(x= bquote(italic(n)[3]), y= bquote('')) +
-         theme(plot.title = element_text(size=20,face="bold",
-                                         margin = margin(t = 0, 0, 5, 0))) +
-         theme(axis.text=element_text(size=16),
-               axis.title=element_text(size=18)) +
-         theme(legend.text=element_text(size=18)) +
-         theme(axis.title.y = element_text(margin = margin(t = 0, r = 0, b = 0, l = 0))) +
-         theme(axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0))) +
-         theme(legend.position="none") +
-         ylim(0,0.3) + 
-         theme(plot.title = element_text(hjust = 0.5)) +
-         labs(title=paste0("Analysis ", j/2)))
-plot6
 
 # get next plot
 j <- 7
@@ -620,21 +486,13 @@ fig.row1 <- plot_grid(plot1 + theme(plot.margin=unit(c(0.15,0.35,0.15,0.15),"cm"
                         theme(legend.position="none"),
                       rel_widths = c(0.8445, 0.8, 0.8, 0.8), nrow = 1)
 
-fig.row2 <- plot_grid(plot2 + theme(plot.margin=unit(c(0.15,0.35,0.15,0.15),"cm")) +
-                        theme(legend.position="none"), 
-                      plot4 + theme(plot.margin=unit(c(0.15,0.35,0.15,0),"cm")) +
-                        theme(legend.position="none"),
-                      plot6 + theme(plot.margin=unit(c(0.15,0.35,0.15,0),"cm")) +
-                        theme(legend.position="none"),
-                      NULL,
-                      rel_widths = c(0.8445, 0.8, 0.8, 0.8), nrow = 1)
 
-fig_final <- plot_grid(fig.row1, fig.row2, get_legend(get(paste0("plot11"))), ncol = 1, rel_heights = c(1, 1, .2))
+fig_final <- plot_grid(fig.row1, get_legend(get(paste0("plot11"))), ncol = 1, rel_heights = c(1, .2))
 
 # output as .pdf file for the article
 pdf(file = paste0("FigDSeq.pdf"),   # The directory you want to save the file in
     width = 1.25*12.5, # The width of the plot in inches
-    height = 1.25*8) # The height of the plot in inches
+    height = 1.25*4.5) # The height of the plot in inches
 
 fig_final
 
@@ -876,8 +734,8 @@ z_df <- data.frame(Z = c(400-r1,400-alphas.x,400-r2), Density = c(0,alphas.y,0))
 plot1x <- ggplot(data=x_df, aes(x=X)) + 
   geom_polygon(aes(y=Density), col=cbb[6], fill = NA, linewidth=1, alpha=0.35) +
   labs(title="") +
-  theme(axis.text=element_text(size=18),
-        axis.title=element_text(size=20)) +
+  theme(axis.text=element_text(size=26),
+        axis.title=element_text(size=30)) +
   theme_bw() +
   scale_x_continuous(breaks=seq(0.0225, 0.0275, 0.0025)) +
   labs(x= bquote(delta['r']), y= bquote('Density')) +
@@ -888,8 +746,8 @@ plot1y <- ggplot(data=y_df, aes(x=Y)) +
   geom_polygon(aes(y=Density), col=cbb[4], 
                fill= NA, size=1, alpha=0.35) +
   labs(title="") +
-  theme(axis.text=element_text(size=18),
-        axis.title=element_text(size=20)) +
+  theme(axis.text=element_text(size=26),
+        axis.title=element_text(size=30)) +
   theme_bw() +
   labs(x= bquote(alpha), y= bquote('Density')) +
   theme(axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0))) +
@@ -899,8 +757,8 @@ plot1z <- ggplot(data=z_df, aes(x=Z)) +
   geom_polygon(aes(y=Density), col=cbb[7], 
                fill=NA, size=1, alpha=0.35) +
   labs(title="") +
-  theme(axis.text=element_text(size=18),
-        axis.title=element_text(size=20)) +
+  theme(axis.text=element_text(size=26),
+        axis.title=element_text(size=30)) +
   theme_bw() +
   labs(x= bquote(beta), y= bquote('Density')) +
   theme(axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0))) +
