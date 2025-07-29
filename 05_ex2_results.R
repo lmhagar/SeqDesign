@@ -1,5 +1,5 @@
 ## this code file contains the code to reproduce the numerical results and
-## and plots in Section 5.2 of the text. Please run "03_ex2_functions.R" first
+## and plots in Section 5.2 of the text. Please run "04_ex2_functions.R" first
 ## to ensure that the necessary packages and functions are loaded
 
 ## load the more packages
@@ -19,7 +19,7 @@ logit <- function(x){
 ## get parameter values for various beta distributions under the predictive approach;
 ## generate these parameter values for the sample sizes that will be explored later in
 ## this file
-ns <- c(18, 34, 22, 26, 30, 29, 38)
+ns <- c(18, 34, 22, 26, 30, 36, 38)
 for (k in 1:7){
   assign(paste0("shapes.pred", ns[k]), getShapes(10000, seed = k))
   write.csv(get(paste0("shapes.pred", ns[k])), 
@@ -28,6 +28,7 @@ for (k in 1:7){
 
 ## use the functions in the previous file to get shape paramters under the 
 ## conditional approach where the 0.99-quantile is 0.025
+alpha.cond <- sapply(0.025, uuu, lower = 0.01, upper = 100, total = 400, q = 0.99)
 shapes.cond <- cbind(rep(0.025, 10000), rep(alpha.cond, 10000), rep(400-alpha.cond, 10000))
 
 ## beta summaries for predictive approach
@@ -40,13 +41,26 @@ for (k in 1:7){
 }
 
 ## beta summaries for conditional approach
-ns <- c(18, 34, 22, 26, 30, 25, 38)
+ns <- c(18, 34, 22, 26, 30, 32, 38)
 seeds <- 10000*c(2, 3, 7, 8, 9, 11, 15) + 1
 for (k in 1:7){
   assign(paste0("summary.cond", ns[k]), 
          getBetaSummaries(ns[k], c(1, 1.5, 2, 2.5), get(paste0("shapes.cond")), seed = seeds[k]))
   write.csv(get(paste0("summary.cond", ns[k])), 
             paste0("beta_summary_cond_", ns[k], ".csv"), row.names = FALSE)
+}
+
+## get the beta shape parameters and summaries for the model Psi0
+alpha.condH0 <- sapply(0.03, uuu, lower = 0.01, upper = 100, total = 400, q = 0.99)
+shapes.condH0 <- cbind(rep(0.03, 10000), rep(alpha.condH0, 10000), rep(400-alpha.condH0, 10000))
+
+seeds <- 18001
+ns <- 37
+for (k in 1){
+  assign(paste0("summary.cond.H0", ns[k]), 
+         getBetaSummariesData(ns[k], c(1, 1.5, 2, 2.5), shapes.condH0, seed = seeds[k]))
+  write.csv(get(paste0("summary.cond.H0", ns[k])), 
+            paste0("beta_summary_cond_H0_", ns[k], ".csv"), row.names = FALSE)
 }
 
 ## set up parallelization
@@ -121,61 +135,112 @@ for (k in 1:length(ns)){
   }
 }
 
-## now get the decision thresholds based on the OBF alpha-spending function
-a.obf <- 2*(1-pnorm(qnorm(1-0.1/2)/sqrt(2:5/5)))
-
-## Define information fractions
-info_times <- 2:5/5
-
-## Define correlation matrix
-corr_matrix <- outer(info_times, info_times, FUN = function(x, y) sqrt(pmin(x, y) / pmax(x, y)))
-
-## function to get get the critical value for second analysis
-getGamma2 <- function(gamma.prev, alpha.cum, cor.mat){
-  error_fn <- function(gamma.prev, cor.mat, gamma.new, target.err){
-    pmvnorm(lower = c(-Inf, qnorm(gamma.new)), upper = c(qnorm(gamma.prev[1]), Inf), mean = rep(0, 2), corr = cor.mat) - target.err
+## repeat for H0
+ns <- 38
+for (k in 1:length(ns)){
+  ## extract the data summary for this sample size
+  summary.temp <- read.csv(paste0("beta_summary_cond_H0_", ns[k], ".csv"))
+  inc <- nrow(summary.temp)/10
+  ll <- "cond_H0"
+  
+  ## get posterior and posterior predictive probabilities
+  for (i in 1:3){
+    ni.temp <- summary.temp[1, 3*i + 1]
+    nf.temp <- summary.temp[1, ncol(summary.temp)]
+    for (j in 1:10){
+      summary.tempj <- summary.temp[seq((j-1)*inc + 1, j*inc, by = 1), c(3*i - 1, 3*i)]
+      temp <- getCompPredMean(ni.temp, nf.temp, summary.tempj, 0.03, "jags_beta.txt", hyper = 10000, 
+                              burnin = 1000, nchains = 1, nthin = 1, ndraws = 5000)
+      write.csv(temp, paste0(ll, "_n_",summary.temp[1,4],"_t_", i, "_batch_", j, ".csv"), row.names = FALSE)
+    }
   }
-  return(uniroot(error_fn, lower = 0.5, upper = 0.999999, gamma.prev = gamma.prev, cor.mat = cor.mat, target.err = alpha.cum[2] - alpha.cum[1]))
+  
+  ## get posterior probabilities for the last analysis
+  i <- 4
+  n.temp <- summary.temp[1, ncol(summary.temp)]
+  for (j in 1:10){
+    summary.tempj <- summary.temp[seq((j-1)*inc + 1, j*inc, by = 1), c(3*i - 1, 3*i)]
+    temp <- getCompPostMean(n.temp, summary.tempj, 0.03, "jags_beta.txt", hyper = 10000, 
+                            burnin = 1000, nchains = 1, nthin = 1, ndraws = 5000)
+    write.csv(temp, paste0(ll, "_n_",summary.temp[1,4],"_t_", i, "_batch_", j, ".csv"), row.names = FALSE)
+  }
 }
 
-## function to get the critical value for third analysis
-getGamma3 <- function(gamma.prev, alpha.cum, cor.mat){
-  error_fn <- function(gamma.prev, cor.mat, gamma.new, target.err){
-    pmvnorm(lower = c(-Inf, -Inf, qnorm(gamma.new)), upper = c(qnorm(gamma.prev[1]), qnorm(gamma.prev[2]), Inf), mean = rep(0, 3), corr = cor.mat) - target.err
-  }
-  return(uniroot(error_fn, lower = 0.5, upper = 0.999999, gamma.prev = gamma.prev, cor.mat = cor.mat, target.err = alpha.cum[3] - alpha.cum[2]))
+## use simulation results to get joint sampling distribution estimate under Psi0 to tune decision thresholds
+ns <- 38
+for (k in 1:length(ns)){
+  assign(paste0("jointH0", ns[k]),
+         jointSampDat(ns[k], c(1, 1.5, 2, 2.5), ll = "cond_H0", gam = gam.final[4]))
+  write.csv(get(paste0("jointH0", ns[k])), paste0("joint_cond_H0_", ns[k], ".csv"), row.names = FALSE)
 }
 
-## function to get the critical value for fourth analysis
-getGamma4 <- function(gamma.prev, alpha.cum, cor.mat){
-  error_fn <- function(gamma.prev, cor.mat, gamma.new, target.err){
-    pmvnorm(lower = c(-Inf, -Inf, -Inf, qnorm(gamma.new)), upper = c(qnorm(gamma.prev[1]), qnorm(gamma.prev[2]), qnorm(gamma.prev[3]), Inf), mean = rep(0, 4), corr = cor.mat) - target.err
+## this function tunes the success thresholds by proportionally
+## adjusting gamma.start toward 1 until the type I error estimate
+## given fixed failure thresholds (fails) is lower than t1E
+tuneDTsPP <- function(gamma.start, fails, t1E, factor.low = 0.5, 
+                      factor.up = 1, nn = 38, ll = "cond_H0"){
+  
+  ## we need to construct joint sampling distibution estimates during this process
+  jointSampDat <- function(n, c_vec, ll, gam){
+    res.full <- NULL
+    for (i in 1:length(c_vec)){
+      res.t <- NULL
+      for (j in 1:10){
+        res.read <- read.csv(paste0(ll, "_n_",n,"_t_", i, "_batch_", j, ".csv"))
+        res.temp <- matrix(res.read[, 1], ncol = 1)
+        if (i < length(c_vec)){
+          res.temp <- cbind(res.temp, apply(res.read[, -1], 1, ppp.prob, gam = gam))
+        }
+        res.t <- rbind(res.t, res.temp)
+      }
+      res.full <- cbind(res.full, res.t)
+    }
+    return(res.full)
   }
-  return(uniroot(error_fn, lower = 0.5, upper = 0.999999, gamma.prev = gamma.prev, cor.mat = cor.mat, target.err = alpha.cum[4] - alpha.cum[3]))
+  
+  
+  alpha.start <- 1 - gamma.start
+  ii <- 0
+  while (factor.up - factor.low > 0.005 & ii < 15){
+    factor.next <- 0.5*(factor.low + factor.up)
+    alpha.next <- factor.next*alpha.start
+    gam.next <- 1 - alpha.next
+    
+    samp.temp <- jointSampDat(nn, c(1, 1.5, 2, 2.5), ll, gam = gam.next[4])
+    
+    stop.temp <- stopData(samp.temp, gam.next, c(0.1, 0.2, 0.3))
+    
+    t1E.temp <- tail(stop.temp, 1)
+    
+    ## decrease factor until t1E is sufficiently low
+    if (t1E.temp > t1E){
+      factor.up <- factor.next
+    } else {
+      factor.low <- factor.next
+    }
+    ii <- ii + 1
+  }
+  return(1 - factor.low*alpha.start)
 }
 
-## get the bounds for the Pocock-type function
-gamma.1 <- 1 - a.obf[1]
-gamma.2 <- getGamma2(gamma.1, a.obf[1:2], corr_matrix[1:2, 1:2])$root
-gamma.3 <- getGamma3(c(gamma.1, gamma.2), a.obf, corr_matrix[1:3, 1:3])$root
-gamma.4 <- getGamma4(c(gamma.1, gamma.2, gamma.3), a.obf, corr_matrix)$root
-
-gamma.obf <- round(c(gamma.1, gamma.2, gamma.3, gamma.4),4)
-write.csv(gamma.obf, "gamma_obf.csv", row.names = FALSE)
+## obtain decision thresholds for this example
+gam.final <- tuneDTsPP(c(0.999, 0.995, 0.99, 0.93), 
+                       fails = c(0.1, 0.2, 0.3), t1E = 0.1)
+write.csv(gam.final, "gam_final.csv", row.names = FALSE)
 
 ## given the selected final success threshold, estimate the joint sampling 
 ## distributions of posterior probabilities under the predictive approach
 ns <- c(18, 22, 26, 30, 34, 38)
 for (k in 1:length(ns)){
   assign(paste0("jointPred", ns[k]),
-         jointSamp(ns[k], c(1, 1.5, 2, 2.5), ll = "pred", gam = gamma.obf[4]))
+         jointSamp(ns[k], c(1, 1.5, 2, 2.5), ll = "pred", gam = gam.final[4]))
   write.csv(get(paste0("jointPred", ns[k])), paste0("joint_pred_", ns[k], ".csv"), row.names = FALSE)
 }
 
 ## repeat estimation process under the conditional approach
 for (k in 1:length(ns)){
   assign(paste0("jointCond", ns[k]),
-         jointSamp(ns[k], c(1, 1.5, 2, 2.5), ll = "cond", gam = gamma.obf[4]))
+         jointSamp(ns[k], c(1, 1.5, 2, 2.5), ll = "cond", gam = gam.final[4]))
   write.csv(get(paste0("jointCond", ns[k])), paste0("joint_cond_", ns[k], ".csv"), row.names = FALSE)
 }
 
@@ -189,11 +254,11 @@ lines.cond <- getLines(jointCond18, jointCond38, 18*c(1, 1, 1.5, 1.5, 2, 2, 2.5)
 ## get the matrices of stopping probabilities based on the linear approximations
 xi.test <- c(0.1, 0.2, 0.3)
 stop.pred <- stopMat(lines.pred, c(1, 1, 1.5, 1.5, 2, 2, 2.5), 
-                     18, 38, 1, gamma.obf, xi.test)
+                     18, 38, 1, gam.final, xi.test)
 write.csv(stop.pred, "stop_mat_lin_pred_sec5.csv", row.names = FALSE)
 
 stop.cond <- stopMat(lines.cond, c(1, 1, 1.5, 1.5, 2, 2, 2.5), 
-                     18, 38, 1, gamma.obf, xi.test)
+                     18, 38, 1, gam.final, xi.test)
 write.csv(stop.cond, "stop_mat_lin_cond_sec5.csv", row.names = FALSE)
 
 ## now get the stopping probabilities based on independent estimates of the
@@ -201,7 +266,7 @@ write.csv(stop.cond, "stop_mat_lin_cond_sec5.csv", row.names = FALSE)
 stop.pred.dat <- NULL
 for (k in 1:length(ns)){
   assign(paste0("stopVec", ns[k]),
-         stopData(get(paste0("jointPred", ns[k])), gamma.obf, xi.test))
+         stopData(get(paste0("jointPred", ns[k])), gam.final, xi.test))
   stop.pred.dat <- rbind(stop.pred.dat, get(paste0("stopVec", ns[k])))
 }
 write.csv(stop.pred.dat, "stop_mat_dat_pred_sec5.csv", row.names = FALSE)
@@ -209,7 +274,7 @@ write.csv(stop.pred.dat, "stop_mat_dat_pred_sec5.csv", row.names = FALSE)
 stop.cond.dat <- NULL
 for (k in 1:length(ns)){
   assign(paste0("stopVec", ns[k]),
-         stopData(get(paste0("jointCond", ns[k])), gamma.obf, xi.test))
+         stopData(get(paste0("jointCond", ns[k])), gam.final, xi.test))
   stop.cond.dat <- rbind(stop.cond.dat, get(paste0("stopVec", ns[k])))
 }
 write.csv(stop.cond.dat, "stop_mat_dat_cond_sec5.csv", row.names = FALSE)
@@ -239,7 +304,7 @@ boot.pred <- foreach(k=1:MM, .combine=rbind,
                                                  38*c(1, 1, 1.5, 1.5, 2, 2, 2.5), J = 10)
                       
                       stopMat(lines.temp, c(1, 1, 1.5, 1.5, 2, 2, 2.5), 
-                              18, 38, 1, gamma.obf, xi.test, boot = TRUE)
+                              18, 38, 1, gam.final, xi.test, boot = TRUE)
                     }
 
 n.cols <- ncol(boot.pred)/7
@@ -262,7 +327,7 @@ boot.cond <- foreach(k=1:MM, .combine=rbind,
                                               38*c(1, 1, 1.5, 1.5, 2, 2, 2.5))
                        
                        stopMat(lines.temp, c(1, 1, 1.5, 1.5, 2, 2, 2.5), 
-                               18, 38, 1, gamma.obf, xi.test, boot = TRUE)
+                               18, 38, 1, gam.final, xi.test, boot = TRUE)
                      }
 
 n.cols <- ncol(boot.cond)/7
@@ -278,22 +343,6 @@ pred.l95 <- apply(boot.pred, 2, quantile, probs = 0.025)
 ## get the bootstrap CIs for the stopping probabilities (conditional)
 cond.u95 <- apply(boot.cond, 2, quantile, probs = 0.975)
 cond.l95 <- apply(boot.cond, 2, quantile, probs = 0.025)
-
-
-## get the CIs for the sample size recommendations
-
-## start with predictive approach
-target.pwr <- 0.8
-boot_npred = apply(boot.pred[,(6*n.cols + 1):(7*n.cols)], 1, function(x, Gam){seq(18,38,1)[which.max(as.numeric(x) >= Gam)]}, 
-                  Gam = target.pwr)
-print(quantile(boot_npred, c(0.025, 0.975)))
-## [28, 30]
-
-## repeat for conditional approach
-boot_ncond = apply(boot.cond[,(6*n.cols + 1):(7*n.cols)], 1, function(x, Gam){seq(18,38,1)[which.max(as.numeric(x) >= Gam)]}, 
-                   Gam = target.pwr)
-print(quantile(boot_ncond, c(0.025, 0.975)))
-## [25, 26]
 
 ## now construct the Figure for Section 5.2
 
@@ -542,7 +591,7 @@ shapes.condH0 <- cbind(rep(0.03, 10000), rep(alpha.condH0, 10000), rep(400-alpha
 
 ## beta summaries for predictive approach
 seeds <- 120001
-ns <- 29
+ns <- 36
 for (k in 1){
   assign(paste0("summary.pred.H0", ns[k]), 
          getBetaSummariesData(ns[k], c(1, 1.5, 2, 2.5), shapes.condH0, seed = seeds[k]))
@@ -552,7 +601,7 @@ for (k in 1){
 
 ## beta summaries for conditional approach
 seeds <- 130001
-ns <- 25
+ns <- 32
 for (k in 1){
   assign(paste0("summary.cond.H0", ns[k]), 
          getBetaSummariesData(ns[k], c(1, 1.5, 2, 2.5), shapes.condH0, seed = seeds[k]))
@@ -567,7 +616,7 @@ progress <- function(n) setTxtProgressBar(pb, n)
 opts <- list(progress = progress)
 
 ## estimate sampling distributions under predictive approach
-ns <- c(29)
+ns <- c(36)
 for (k in 1:length(ns)){
   ## extract the data summary for this sample size
   summary.temp <- read.csv(paste0("beta_summary_pred_", ns[k], ".csv"))
@@ -628,7 +677,7 @@ for (k in 1:length(ns)){
 }
 
 ## repeat process for the conditional approach
-ns <- 25
+ns <- 32
 for (k in 1:length(ns)){
   ## extract the data summary for this sample size
   summary.temp <- read.csv(paste0("beta_summary_cond_", ns[k], ".csv"))
@@ -692,38 +741,125 @@ for (k in 1:length(ns)){
 ## now get the joint sampling distribution estimates and estimated stopping probabilities
 
 ## predictive approach
-ns <- 29
+ns <- 36
 k <- 1
 assign(paste0("jointPred", ns[k]),
-       jointSampDat(ns[k], c(1, 1.5, 2, 2.5), ll = "pred", gam = gamma.obf[4]))
+       jointSampDat(ns[k], c(1, 1.5, 2, 2.5), ll = "pred", gam = gam.final[4]))
 write.csv(get(paste0("jointPred", ns[k])), paste0("joint_pred_", ns[k], ".csv"), row.names = FALSE)
   
 assign(paste0("stopPred", ns[k]),
-       stopData(get(paste0("jointPred", ns[k])), gamma.obf, xi.test))
+       stopData(get(paste0("jointPred", ns[k])), gam.final, xi.test))
 
 ## repeat for H0
 assign(paste0("jointPredH0", ns[k]),
-         jointSampDat(ns[k], c(1, 1.5, 2, 2.5), ll = "pred_H0", gam = gamma.obf[4]))
+         jointSampDat(ns[k], c(1, 1.5, 2, 2.5), ll = "pred_H0", gam = gam.final[4]))
 write.csv(get(paste0("jointPredH0", ns[k])), paste0("joint_pred_H0_", ns[k], ".csv"), row.names = FALSE)
   
 assign(paste0("stopPredH0", ns[k]),
-         stopData(get(paste0("jointPredH0", ns[k])), gamma.obf, xi.test))
+         stopData(get(paste0("jointPredH0", ns[k])), gam.final, xi.test))
   
 ## repeat for conditional approach
-ns <- 25
+ns <- 32
 assign(paste0("jointCond", ns[k]),
-         jointSampDat(ns[k], c(1, 1.5, 2, 2.5), ll = "cond", gam = gamma.obf[4]))
+         jointSampDat(ns[k], c(1, 1.5, 2, 2.5), ll = "cond", gam = gam.final[4]))
 write.csv(get(paste0("jointCond", ns[k])), paste0("joint_cond_", ns[k], ".csv"), row.names = FALSE)
   
 assign(paste0("stopCond", ns[k]),
-         stopData(get(paste0("jointCond", ns[k])), gamma.obf, xi.test))
+         stopData(get(paste0("jointCond", ns[k])), gam.final, xi.test))
   
 assign(paste0("jointCondH0", ns[k]),
-         jointSampDat(ns[k], c(1, 1.5, 2, 2.5), ll = "cond_H0", gam = gamma.obf[4]))
+         jointSampDat(ns[k], c(1, 1.5, 2, 2.5), ll = "cond_H0", gam = gam.final[4]))
 write.csv(get(paste0("jointCondH0", ns[k])), paste0("joint_cond_H0_", ns[k], ".csv"), row.names = FALSE)
   
 assign(paste0("stopCondH0", ns[k]),
-         stopData(get(paste0("jointCondH0", ns[k])), gamma.obf, xi.test))
+         stopData(get(paste0("jointCondH0", ns[k])), gam.final, xi.test))
 
-tab2 <- rbind(stop.pred[12,], stopPred29, stopPredH029, stop.cond[8,], stopCond25, stopCondH025)
+tab2 <- rbind(stopPred36, stopPredH036, stopCond32, stopCondH032)
 write.csv(tab2, "tab2.csv", row.names = FALSE)
+
+## get the plots for the design prior in Appendix E
+## get the analytical form of the design prior for alpha
+
+## this is the inverse transformation from alpha back to delta
+finv <- function(x){
+  return(qbeta(0.99, x, 400 - x))
+}
+
+## get the pdf for the uniform design prior
+funif <- function(xxx){
+  200
+}
+
+## create function to compute gradient
+gg <- function(x){
+  grad(finv, x)
+}
+
+## get the smallest and largest possible values of alpha
+r1 <- uniroot(find_alpha, lower = 0.01, upper = 10, total = 400, q = 0.99, p =0.0225)$root
+r2 <- uniroot(find_alpha, lower = 0.01, upper = 10, total = 400, q = 0.99, p =0.0275)$root
+
+## get the density function values for various alpha values
+alphas.x <- seq(r1, r2, length.out = 1000)
+der.vec <- sapply(alphas.x, gg)
+alphas.y <- funif(finv(alphas.x))*der.vec
+
+x_dens <- NULL
+x_s <- seq(0.0225,0.0275,0.00005)
+for (i in 1:length(x_s)){
+  x_dens[i] <- 1/0.005
+}
+x_df <- data.frame(X = c(0.0225,x_s,0.0275), Density = c(0,x_dens,0))
+
+y_df <- data.frame(Y = c(r1,alphas.x,r2), Density = c(0,alphas.y,0))
+
+z_df <- data.frame(Z = c(400-r1,400-alphas.x,400-r2), Density = c(0,alphas.y,0))
+
+## generate plots
+plot1x <- ggplot(data=x_df, aes(x=X)) + 
+  geom_polygon(aes(y=Density), col=cbb[6], fill = NA, linewidth=1, alpha=0.35) +
+  labs(title="") +
+  theme(axis.text=element_text(size=26),
+        axis.title=element_text(size=30)) +
+  theme_bw() +
+  scale_x_continuous(breaks=seq(0.0225, 0.0275, 0.0025)) +
+  labs(x= bquote(delta['r']), y= bquote('Density')) +
+  theme(axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0))) +
+  theme(axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0)))
+
+plot1y <- ggplot(data=y_df, aes(x=Y)) + 
+  geom_polygon(aes(y=Density), col=cbb[4], 
+               fill= NA, size=1, alpha=0.35) +
+  labs(title="") +
+  theme(axis.text=element_text(size=26),
+        axis.title=element_text(size=30)) +
+  theme_bw() +
+  labs(x= bquote(alpha), y= bquote('Density')) +
+  theme(axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0))) +
+  theme(axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0)))
+
+plot1z <- ggplot(data=z_df, aes(x=Z)) + 
+  geom_polygon(aes(y=Density), col=cbb[7], 
+               fill=NA, size=1, alpha=0.35) +
+  labs(title="") +
+  theme(axis.text=element_text(size=26),
+        axis.title=element_text(size=30)) +
+  theme_bw() +
+  labs(x= bquote(beta), y= bquote('Density')) +
+  theme(axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0))) +
+  theme(axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0)))
+
+fig1 <- plot_grid(plot1x + theme(plot.margin=unit(c(0,0.5,0,0.5),"cm")), 
+                  plot1y + theme(plot.margin=unit(c(0,0.5,0,0.5),"cm")),
+                  plot1z + theme(plot.margin=unit(c(0,0.5,0,0.5),"cm")), nrow = 1)
+
+fig1
+
+# output as .pdf file for the article
+pdf(file = paste0("FigDesign.pdf"),   # The directory you want to save the file in
+    width = 10.5, # The width of the plot in inches
+    height = 3.5) # The height of the plot in inches
+
+fig1
+
+dev.off()
