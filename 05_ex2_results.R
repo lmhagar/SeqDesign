@@ -1,5 +1,5 @@
 ## this code file contains the code to reproduce the numerical results and
-## and plots in Section 5.2 of the text. Please run "04_ex2_functions.R" first
+## and plots in Section 6.2 of the text. Please run "04_ex2_functions.R" first
 ## to ensure that the necessary packages and functions are loaded
 
 ## load the more packages
@@ -344,7 +344,7 @@ pred.l95 <- apply(boot.pred, 2, quantile, probs = 0.025)
 cond.u95 <- apply(boot.cond, 2, quantile, probs = 0.975)
 cond.l95 <- apply(boot.cond, 2, quantile, probs = 0.025)
 
-## now construct the Figure for Section 5.2
+## now construct the Figure for Section 6.2
 
 ## get colour palette
 cbb <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
