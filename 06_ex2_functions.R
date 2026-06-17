@@ -1,5 +1,5 @@
 ## this code file contains the functions used to implement Algorithm 1 for
-## the beta example, as well as the functions to run the confirmation
+## the beta example in Appendix E, as well as the functions to run the confirmation
 ## simulations and construct bootstrap confidence intervals
 
 ## load the necessary packages

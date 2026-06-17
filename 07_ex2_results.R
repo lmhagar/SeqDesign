@@ -1,5 +1,5 @@
 ## this code file contains the code to reproduce the numerical results and
-## and plots in Section 6.2 of the text. Please run "04_ex2_functions.R" first
+## and plots in Appendix E. Please run "06_ex2_functions.R" first
 ## to ensure that the necessary packages and functions are loaded
 
 ## load the more packages
@@ -26,7 +26,7 @@ for (k in 1:7){
             paste0("shapes_pred_", ns[k], ".csv"), row.names = FALSE)
 }
 
-## use the functions in the previous file to get shape paramters under the 
+## use the functions in the previous file to get shape parameters under the 
 ## conditional approach where the 0.99-quantile is 0.025
 alpha.cond <- sapply(0.025, uuu, lower = 0.01, upper = 100, total = 400, q = 0.99)
 shapes.cond <- cbind(rep(0.025, 10000), rep(alpha.cond, 10000), rep(400-alpha.cond, 10000))

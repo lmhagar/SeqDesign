@@ -1,5 +1,5 @@
-## this code file contains the functions used to implement Algorithm 1 for
-## the PLATINUM-CAN example, as well as the functions to run the confirmation
+## this code file contains the functions used to implement Algorithm 1 for the
+## supplement PLATINUM-CAN example, as well as the functions to run the confirmation
 ## simulations and construct bootstrap confidence intervals
 
 ## load the necessary packages
